@@ -2,38 +2,35 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import type { Database } from '@/types/supabase';
 
-/* ---------- Types ---------- */
+type PlanRow = Database['public']['Tables']['plans']['Row'];
+type PlanInsert = Database['public']['Tables']['plans']['Insert'];
+type PlanUpdate = Database['public']['Tables']['plans']['Update'];
 
-interface ProductOption {
-  id: string;
-  name: string;
+type ProductRow = Pick<
+  Database['public']['Tables']['products']['Row'],
+  'id' | 'name'
+>;
+
+interface PlanFormProps {
+  plan?: PlanRow;
 }
 
-interface Plan {
-  id: string;
-  product_id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  currency: string;
-  interval: 'month' | 'year';
-  active: boolean;
-}
-
-/* ---------- Component ---------- */
-
-export default function PlanForm({ plan }: { plan?: Plan }) {
+export default function PlanForm({ plan }: PlanFormProps) {
   const router = useRouter();
   const supabase = createClient();
 
-  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [products, setProducts] = useState<ProductRow[]>([]);
   const [productId, setProductId] = useState<string>(plan?.product_id ?? '');
   const [name, setName] = useState(plan?.name ?? '');
   const [description, setDescription] = useState(plan?.description ?? '');
-  const [price, setPrice] = useState(plan ? String(plan.price) : '');
+  const [price, setPrice] = useState(
+    plan ? String(plan.price) : ''
+  );
+
   const currency = 'INR';
   const [interval, setInterval] = useState<'month' | 'year'>(
     plan?.interval ?? 'month'
@@ -42,41 +39,34 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /* ---------- Load Products ---------- */
+  /* ---------------- FETCH PRODUCTS ---------------- */
 
   useEffect(() => {
-    let mounted = true;
-
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from('products')
         .select('id, name')
         .order('name')
-        .returns<ProductOption[]>();
+        .returns<ProductRow[]>();
 
       if (error) {
-        console.error('Failed to load products:', error);
+        console.error(error);
         return;
       }
 
-      if (!mounted || !data) return;
+      if (data) {
+        setProducts(data);
 
-      setProducts(data);
-
-      // ✅ Only auto-select when creating (not editing)
-      if (!plan && data.length > 0) {
-        setProductId((prev) => prev || data[0].id);
+        if (!plan && data.length > 0) {
+          setProductId(data[0].id);
+        }
       }
     };
 
     fetchProducts();
-
-    return () => {
-      mounted = false;
-    };
   }, [supabase, plan]);
 
-  /* ---------- Submit ---------- */
+  /* ---------------- SUBMIT ---------------- */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +83,7 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
         throw new Error('Product is required');
       }
 
-      const payload = {
+      const payload: PlanInsert | PlanUpdate = {
         product_id: productId,
         name,
         description: description || null,
@@ -106,12 +96,15 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
       if (plan) {
         const { error } = await supabase
           .from('plans')
-          .update(payload)
+          .update(payload as PlanUpdate)
           .eq('id', plan.id);
 
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('plans').insert(payload);
+        const { error } = await supabase
+          .from('plans')
+          .insert(payload as PlanInsert);
+
         if (error) throw error;
       }
 
@@ -124,7 +117,7 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
     }
   };
 
-  /* ---------- UI ---------- */
+  /* ---------------- UI ---------------- */
 
   return (
     <div className="mt-8">
@@ -138,7 +131,7 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
           </div>
         )}
 
-        {/* Product */}
+        {/* PRODUCT */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Product *
@@ -151,15 +144,15 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
             className="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 text-gray-900 shadow-sm disabled:bg-gray-50"
           >
             <option value="">Select a product</option>
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name}
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Name */}
+        {/* NAME */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Plan Name *
@@ -172,7 +165,7 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
           />
         </div>
 
-        {/* Description */}
+        {/* DESCRIPTION */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Description
@@ -185,7 +178,7 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
           />
         </div>
 
-        {/* Price & Interval */}
+        {/* PRICE + INTERVAL */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -193,9 +186,9 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
             </label>
             <input
               type="number"
-              required
               min="0"
               step="0.01"
+              required
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 px-3 py-2"
@@ -204,7 +197,7 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Billing Interval *
+              Interval *
             </label>
             <select
               value={interval}
@@ -219,18 +212,20 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
           </div>
         </div>
 
-        {/* Active */}
+        {/* ACTIVE */}
         <div className="flex items-center">
           <input
             type="checkbox"
             checked={active}
             onChange={(e) => setActive(e.target.checked)}
-            className="h-4 w-4"
+            className="h-4 w-4 rounded border-gray-300"
           />
-          <span className="ml-2 text-sm">Active</span>
+          <span className="ml-2 text-sm text-gray-700">
+            Active
+          </span>
         </div>
 
-        {/* Actions */}
+        {/* ACTIONS */}
         <div className="flex justify-end gap-4">
           <Link
             href="/admin/plans"
@@ -239,9 +234,8 @@ export default function PlanForm({ plan }: { plan?: Plan }) {
             Cancel
           </Link>
           <button
-            type="submit"
             disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {loading ? 'Saving…' : plan ? 'Update Plan' : 'Create Plan'}
           </button>
