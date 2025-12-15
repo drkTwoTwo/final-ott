@@ -2,17 +2,9 @@ import { redirect, notFound } from 'next/navigation';
 import { isAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import PlanForm from '@/components/admin/PlanForm';
+import type { Database } from '@/types/database.types';
 
-type Plan = {
-  id: string;
-  product_id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  currency: string;
-  interval: 'month' | 'year';
-  active: boolean;
-};
+type PlanRow = Database['public']['Tables']['plans']['Row'];
 
 export default async function EditPlanPage({
   params,
@@ -22,21 +14,19 @@ export default async function EditPlanPage({
   const { id } = await params;
 
   const admin = await isAdmin();
-  
   if (!admin) {
     redirect('/');
   }
 
   const supabase = await createClient();
-  
-  const { data: plans } = await supabase
+
+  const { data, error } = await supabase
     .from('plans')
     .select('*')
-    .eq('id', id) as { data: Plan[] | null };
+    .eq('id', id)
+    .single<PlanRow>();
 
-  const plan = (plans ?? [])[0];
-
-  if (!plan) {
+  if (error || !data) {
     notFound();
   }
 
@@ -46,10 +36,8 @@ export default async function EditPlanPage({
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">
           Edit Plan
         </h1>
-        <PlanForm plan={plan} />
+        <PlanForm plan={data} />
       </div>
     </div>
   );
 }
-
-
