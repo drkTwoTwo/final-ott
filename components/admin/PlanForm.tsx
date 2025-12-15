@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import type { Database } from '@/types/database.types';
 import { createClient } from '@/lib/supabase/client';
-import type { Database } from '@/types/supabase';
 
 type PlanRow = Database['public']['Tables']['plans']['Row'];
 type PlanInsert = Database['public']['Tables']['plans']['Insert'];
@@ -83,7 +83,7 @@ export default function PlanForm({ plan }: PlanFormProps) {
         throw new Error('Product is required');
       }
 
-      const payload: PlanInsert | PlanUpdate = {
+      const payload: PlanInsert = {
         product_id: productId,
         name,
         description: description || null,
@@ -96,14 +96,14 @@ export default function PlanForm({ plan }: PlanFormProps) {
       if (plan) {
         const { error } = await supabase
           .from('plans')
-          .update(payload as PlanUpdate)
+          .update(payload as never)
           .eq('id', plan.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('plans')
-          .insert(payload as PlanInsert);
+          .insert(payload as never);
 
         if (error) throw error;
       }
