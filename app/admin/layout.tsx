@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
-import { isAdmin } from '@/lib/auth';
 import AdminNavbar from '@/components/admin/AdminNavbar';
 
 export default async function AdminLayout({

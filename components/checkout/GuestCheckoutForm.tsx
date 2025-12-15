@@ -65,10 +65,6 @@ export default function GuestCheckoutForm({ plan }: { plan: Plan }) {
         cancel_url: `${window.location.origin}/checkout/guest/${plan.id}`,
       });
 
-      // Replace {ORDER_ID} placeholder with actual order ID
-      const successUrl = payment.payment_url || 
-        `${window.location.origin}/checkout/success?order_id=${payment.order_id}`;
-
       // Redirect to payment URL
       if (payment.payment_url) {
         window.location.href = payment.payment_url;

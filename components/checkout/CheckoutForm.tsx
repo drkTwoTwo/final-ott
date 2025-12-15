@@ -28,7 +28,6 @@ export default function CheckoutForm({
   userEmail: string;
 }) {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -74,10 +73,6 @@ export default function CheckoutForm({
         cancel_url: `${window.location.origin}/checkout/${plan.id}`,
         token: session.access_token,
       });
-
-      // Replace {ORDER_ID} placeholder with actual order ID
-      const successUrl = payment.payment_url || 
-        `${window.location.origin}/checkout/success?order_id=${payment.order_id}`;
 
       // Redirect to payment URL
       if (payment.payment_url) {

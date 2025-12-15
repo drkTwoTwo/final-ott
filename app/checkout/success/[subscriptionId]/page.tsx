@@ -22,9 +22,9 @@ type SubscriptionWithPlan = {
 export default async function CheckoutSuccessPage({
   params,
 }: {
-  params: Promise<{ subscriptionId: string }>;
+  params: { subscriptionId: string };
 }) {
-  const { subscriptionId } = await params;
+  const { subscriptionId } = params;
 
   const supabase = await createClient();
   

@@ -223,6 +223,7 @@ export interface Database {
           role?: 'admin' | 'user' | null;
           created_at?: string;
         };
+        Relationships: [];
       };
     };
     Views: {};

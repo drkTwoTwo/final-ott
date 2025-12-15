@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { createPayment } from '@/lib/api/payments';
 import { formatCurrency } from '@/lib/utils';
-import { getProductBySlug } from '@/lib/api/edge-functions';
 import { validateEmail, validatePhoneNumber, sanitizePhoneNumber } from '@/lib/validation';
 
 interface Plan {
@@ -203,10 +202,6 @@ export default function CheckoutPage() {
         cancel_url: `${window.location.origin}/checkout/${planId}`,
         token: session?.access_token,
       });
-
-      // Replace {ORDER_ID} placeholder with actual order ID
-      const successUrl = payment.payment_url || 
-        `${window.location.origin}/checkout/success?order_id=${payment.order_id}`;
 
       // Redirect to payment URL
       if (payment.payment_url) {

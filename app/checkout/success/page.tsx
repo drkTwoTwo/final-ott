@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { verifyPayment } from '@/lib/api/payments';
@@ -34,7 +34,7 @@ function requireString(value: string | null, name: string): string {
 
 /* ---------- Component ---------- */
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -201,6 +201,14 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense>
+      <CheckoutSuccessInner />
+    </Suspense>
   );
 }
 

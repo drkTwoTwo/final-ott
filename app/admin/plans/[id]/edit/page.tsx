@@ -9,9 +9,9 @@ type PlanRow = Database['public']['Tables']['plans']['Row'];
 export default async function EditPlanPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  const { id } = await params;
+  const { id } = params;
 
   const admin = await isAdmin();
   if (!admin) {

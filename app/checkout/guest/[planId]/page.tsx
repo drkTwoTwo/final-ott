@@ -16,9 +16,9 @@ type PlanWithProduct = {
 export default async function GuestCheckoutPage({
   params,
 }: {
-  params: Promise<{ planId: string }>;
+  params: { planId: string };
 }) {
-  const { planId } = await params;
+  const { planId } = params;
 
   const supabase = await createClient();
   
