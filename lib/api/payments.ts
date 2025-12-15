@@ -45,10 +45,8 @@ export async function createPayment(
     apikey: SUPABASE_ANON_KEY,
   };
 
-  // Optional auth for logged-in users
-  if (params.token) {
-    headers.Authorization = `Bearer ${params.token}`;
-  }
+  const authToken = params.token || SUPABASE_ANON_KEY;
+  headers.Authorization = `Bearer ${authToken}`;
 
   const payload = {
     plan_id: params.plan_id,
@@ -119,9 +117,8 @@ export async function verifyPayment(
     apikey: SUPABASE_ANON_KEY,
   };
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
+  const authToken = token || SUPABASE_ANON_KEY;
+  headers.Authorization = `Bearer ${authToken}`;
 
   let response: Response;
 

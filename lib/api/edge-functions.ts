@@ -52,9 +52,8 @@ export async function callEdgeFunction(
     apikey: SUPABASE_ANON_KEY,
   };
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
+  const authToken = token || SUPABASE_ANON_KEY;
+  headers.Authorization = `Bearer ${authToken}`;
 
   let response: Response;
 
