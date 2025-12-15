@@ -40,10 +40,8 @@ Deno.serve(async (req) => {
       validatePhoneNumber(body.phone_number || '', 'phone_number'),
       !userId ? validateRequired(body.guest_email, 'guest_email') : null,
       !userId && body.guest_email ? validateEmail(body.guest_email) : null,
-      validateRequired(body.success_url, 'success_url'),
-      validateString(body.success_url, 'success_url', 1, 2048),
-      validateRequired(body.cancel_url, 'cancel_url'),
-      validateString(body.cancel_url, 'cancel_url', 1, 2048)
+      body.success_url ? validateString(body.success_url, 'success_url', 1, 2048) : null,
+      body.cancel_url ? validateString(body.cancel_url, 'cancel_url', 1, 2048) : null
     );
 
     if (errors.length > 0) {
@@ -111,14 +109,45 @@ Deno.serve(async (req) => {
       return errorResponse('Failed to create order', 500, orderError);
     }
 
-    const rawSuccessUrl = String(body.success_url || '').trim();
-    let redirectUrl = rawSuccessUrl;
+    const originHeader = req.headers.get('origin') || '';
+    const refererHeader = req.headers.get('referer') || '';
+    let origin = '';
+    try {
+      if (originHeader) {
+        origin = new URL(originHeader).origin;
+      } else if (refererHeader) {
+        origin = new URL(refererHeader).origin;
+      }
+    } catch {
+      origin = '';
+    }
 
-    if (redirectUrl.includes('{ORDER_ID}')) {
-      redirectUrl = redirectUrl.replaceAll('{ORDER_ID}', order.id);
-    } else {
-      const joiner = redirectUrl.includes('?') ? '&' : '?';
-      redirectUrl = `${redirectUrl}${joiner}order_id=${encodeURIComponent(order.id)}`;
+    const rawSuccessUrl = String(body.success_url || '').trim();
+    let successUrl = rawSuccessUrl;
+
+    if (!successUrl && origin) {
+      successUrl = `${origin}/checkout/success?order_id={ORDER_ID}`;
+    }
+
+    if (successUrl && origin && successUrl.startsWith('/')) {
+      successUrl = `${origin}${successUrl}`;
+    }
+
+    let redirectUrl = successUrl;
+
+    if (redirectUrl) {
+      if (redirectUrl.includes('{ORDER_ID}')) {
+        redirectUrl = redirectUrl.replaceAll('{ORDER_ID}', order.id);
+      } else {
+        try {
+          const urlObj = new URL(redirectUrl);
+          urlObj.searchParams.set('order_id', order.id);
+          redirectUrl = urlObj.toString();
+        } catch {
+          const joiner = redirectUrl.includes('?') ? '&' : '?';
+          redirectUrl = `${redirectUrl}${joiner}order_id=${encodeURIComponent(order.id)}`;
+        }
+      }
     }
 
     if (!redirectUrl && XTRAGATEWAY_REDIRECT_URL) {
@@ -127,7 +156,8 @@ Deno.serve(async (req) => {
 
     if (!redirectUrl) {
       return errorResponse('Redirect URL not configured', 500, {
-        action: 'Provide success_url in request or set XTRAGATEWAY_REDIRECT_URL in Supabase secrets',
+        action:
+          'Provide success_url in request, or call this function with an Origin header, or set XTRAGATEWAY_REDIRECT_URL in Supabase secrets',
       });
     }
 
