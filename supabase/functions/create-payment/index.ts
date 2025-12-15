@@ -9,6 +9,7 @@ import {
   validateNumber,
   validateEmail,
   validatePhoneNumber,
+  validateString,
   validateRequired,
   collectErrors,
 } from '../_shared/validation.ts';
@@ -27,12 +28,6 @@ Deno.serve(async (req) => {
       return errorResponse('Payment gateway not configured', 500);
     }
 
-    if (!XTRAGATEWAY_REDIRECT_URL) {
-      return errorResponse('Redirect URL not configured', 500, {
-        action: 'Set XTRAGATEWAY_REDIRECT_URL in Supabase secrets',
-      });
-    }
-
     const supabase = createAdminClient();
     const { userId } = await getUserFromRequest(req);
     const body = await req.json();
@@ -44,7 +39,11 @@ Deno.serve(async (req) => {
       validateRequired(body.phone_number, 'phone_number'),
       validatePhoneNumber(body.phone_number || '', 'phone_number'),
       !userId ? validateRequired(body.guest_email, 'guest_email') : null,
-      !userId && body.guest_email ? validateEmail(body.guest_email) : null
+      !userId && body.guest_email ? validateEmail(body.guest_email) : null,
+      validateRequired(body.success_url, 'success_url'),
+      validateString(body.success_url, 'success_url', 1, 2048),
+      validateRequired(body.cancel_url, 'cancel_url'),
+      validateString(body.cancel_url, 'cancel_url', 1, 2048)
     );
 
     if (errors.length > 0) {
@@ -112,13 +111,33 @@ Deno.serve(async (req) => {
       return errorResponse('Failed to create order', 500, orderError);
     }
 
+    const rawSuccessUrl = String(body.success_url || '').trim();
+    let redirectUrl = rawSuccessUrl;
+
+    if (redirectUrl.includes('{ORDER_ID}')) {
+      redirectUrl = redirectUrl.replaceAll('{ORDER_ID}', order.id);
+    } else {
+      const joiner = redirectUrl.includes('?') ? '&' : '?';
+      redirectUrl = `${redirectUrl}${joiner}order_id=${encodeURIComponent(order.id)}`;
+    }
+
+    if (!redirectUrl && XTRAGATEWAY_REDIRECT_URL) {
+      redirectUrl = XTRAGATEWAY_REDIRECT_URL;
+    }
+
+    if (!redirectUrl) {
+      return errorResponse('Redirect URL not configured', 500, {
+        action: 'Provide success_url in request or set XTRAGATEWAY_REDIRECT_URL in Supabase secrets',
+      });
+    }
+
     // Xtragateway official create-order (form-encoded)
     const formData = new URLSearchParams();
     formData.append('customer_mobile', sanitizedPhone);
     formData.append('user_token', XTRAGATEWAY_API_KEY);
     formData.append('amount', amount);
     formData.append('order_id', order.id); // use our order id to keep linkage
-    formData.append('redirect_url', XTRAGATEWAY_REDIRECT_URL);
+    formData.append('redirect_url', redirectUrl);
     formData.append('remark1', product.name || 'order');
     formData.append('remark2', plan.id);
 

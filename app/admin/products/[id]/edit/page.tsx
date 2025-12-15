@@ -17,9 +17,14 @@ type Product = {
 export default async function EditProductPage({
   params,
 }: {
-  params: { id: string };
+  params?: { id?: string } | Promise<{ id?: string }>;
 }) {
-  const { id } = params;
+  const resolvedParams = await Promise.resolve(params);
+  const id = resolvedParams?.id;
+
+  if (!id) {
+    notFound();
+  }
 
   const admin = await isAdmin();
   

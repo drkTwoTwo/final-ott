@@ -87,6 +87,16 @@ export async function createPayment(
   }
 
   if (!response.ok) {
+    if (response.status === 404) {
+      const error = new Error(
+        'Payment service is not available (create-payment Edge Function returned 404). ' +
+          'Deploy Supabase Edge Functions: create-payment, verify-payment.'
+      );
+      (error as any).status = response.status;
+      (error as any).details = data;
+      throw error;
+    }
+
     const message =
       data?.error ||
       data?.message ||
@@ -145,6 +155,16 @@ export async function verifyPayment(
   }
 
   if (!response.ok) {
+    if (response.status === 404) {
+      const error = new Error(
+        'Payment verification service is not available (verify-payment Edge Function returned 404). ' +
+          'Deploy Supabase Edge Functions: verify-payment.'
+      );
+      (error as any).status = response.status;
+      (error as any).details = data;
+      throw error;
+    }
+
     const message =
       data?.error ||
       data?.message ||

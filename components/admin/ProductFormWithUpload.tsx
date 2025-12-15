@@ -111,15 +111,50 @@ export default function ProductFormWithUpload({ product }: { product?: Product }
 
       if (product) {
         // Update existing product via Edge Function
-        const result = await adminUpdateProduct(product.id, productData, session.access_token);
-        if (!result) {
-          throw new Error('Failed to update product');
+        try {
+          const result = await adminUpdateProduct(
+            product.id,
+            productData,
+            session.access_token
+          );
+          if (!result) {
+            throw new Error('Failed to update product');
+          }
+        } catch (err: any) {
+          const status = err?.status;
+          if (status === 404) {
+            const { error: updateError } = await supabase
+              .from('products')
+              .update(productData)
+              .eq('id', product.id);
+
+            if (updateError) {
+              throw updateError;
+            }
+          } else {
+            throw err;
+          }
         }
       } else {
         // Create new product via Edge Function
-        const result = await adminCreateProduct(productData, session.access_token);
-        if (!result || !result.product) {
-          throw new Error('Failed to create product');
+        try {
+          const result = await adminCreateProduct(productData, session.access_token);
+          if (!result || !result.product) {
+            throw new Error('Failed to create product');
+          }
+        } catch (err: any) {
+          const status = err?.status;
+          if (status === 404) {
+            const { error: insertError } = await supabase
+              .from('products')
+              .insert(productData);
+
+            if (insertError) {
+              throw insertError;
+            }
+          } else {
+            throw err;
+          }
         }
       }
 

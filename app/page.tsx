@@ -248,7 +248,7 @@ function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       href={`/products/${productSlug}`}
-      className="group flex-shrink-0 w-64"
+      className="group flex-shrink-0 w-44 sm:w-64"
     >
       <div className="relative rounded-lg bg-gray-900 border border-gray-800 overflow-hidden hover:border-gray-700 transition-all">
         {isOutOfStock && (
@@ -256,12 +256,12 @@ function ProductCard({ product }: { product: Product }) {
             Out of Stock
           </div>
         )}
-        <div className="aspect-video w-full overflow-hidden bg-gray-800">
+        <div className="aspect-video w-full overflow-hidden bg-gray-800 flex items-center justify-center p-3">
           {product.image_url ? (
             <img
               src={product.image_url}
               alt={product.name}
-              className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+              className="max-h-full max-w-full object-contain group-hover:scale-[1.02] transition-transform"
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center">
@@ -269,24 +269,24 @@ function ProductCard({ product }: { product: Product }) {
             </div>
           )}
         </div>
-        <div className="p-4">
+        <div className="p-2.5 sm:p-4">
           {product.category && (
             <span className="text-xs text-gray-400 mb-1 block">{product.category}</span>
           )}
-          <h3 className="text-white font-semibold mb-2 line-clamp-1">{product.name}</h3>
+          <h3 className="text-white text-[13px] sm:text-base font-semibold mb-2 line-clamp-1">{product.name}</h3>
           {cheapestPlan && (
             <div className="flex items-baseline gap-1 mb-3">
-              <span className="text-white font-bold">
+              <span className="text-white text-[13px] sm:text-base font-bold">
                 {formatCurrency(cheapestPlan.price)}
               </span>
-              <span className="text-gray-400 text-sm">
+              <span className="text-gray-400 text-xs sm:text-sm">
                 /{cheapestPlan.interval === 'month' ? 'mo' : 'yr'}
               </span>
             </div>
           )}
           <button
             disabled={isOutOfStock}
-            className={`w-full py-2 rounded-md text-sm font-medium transition-all ${
+            className={`w-full py-1.5 sm:py-2 rounded-md text-[11px] sm:text-sm font-medium transition-all ${
               isOutOfStock
                 ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                 : 'bg-black text-white hover:bg-gray-800'
