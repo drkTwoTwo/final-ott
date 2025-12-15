@@ -18,7 +18,6 @@ function getEdgeFunctionHeaders(request: NextRequest, bodyPresent: boolean) {
 
   const headers = new Headers();
   headers.set('apikey', apikey);
-  headers.set('authorization', `Bearer ${apikey}`);
 
   const contentType = request.headers.get('content-type');
   if (bodyPresent && contentType) {
