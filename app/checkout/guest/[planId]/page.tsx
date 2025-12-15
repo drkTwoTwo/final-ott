@@ -2,6 +2,17 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import GuestCheckoutForm from '@/components/checkout/GuestCheckoutForm';
 
+type PlanWithProduct = {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  currency: string;
+  interval: 'month' | 'year';
+  product_id: string;
+  products: { id: string; name: string };
+};
+
 export default async function GuestCheckoutPage({
   params,
 }: {
@@ -11,7 +22,7 @@ export default async function GuestCheckoutPage({
 
   const supabase = await createClient();
   
-  const { data: plan } = await supabase
+  const { data: plans } = await supabase
     .from('plans')
     .select(
       `
@@ -29,8 +40,9 @@ export default async function GuestCheckoutPage({
     `
     )
     .eq('id', planId)
-    .eq('active', true)
-    .single();
+    .eq('active', true) as { data: PlanWithProduct[] | null };
+
+  const plan = (plans ?? [])[0];
 
   if (!plan) {
     notFound();
@@ -45,7 +57,7 @@ export default async function GuestCheckoutPage({
         <p className="mt-2 text-sm text-gray-600">
           No account required. Complete your purchase with just your email.
         </p>
-        <GuestCheckoutForm plan={plan as any} />
+        <GuestCheckoutForm plan={plan} />
       </div>
     </div>
   );

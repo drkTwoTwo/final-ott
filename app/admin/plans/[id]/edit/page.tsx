@@ -3,6 +3,17 @@ import { isAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import PlanForm from '@/components/admin/PlanForm';
 
+type Plan = {
+  id: string;
+  product_id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  currency: string;
+  interval: 'month' | 'year';
+  active: boolean;
+};
+
 export default async function EditPlanPage({
   params,
 }: {
@@ -18,11 +29,12 @@ export default async function EditPlanPage({
 
   const supabase = await createClient();
   
-  const { data: plan } = await supabase
+  const { data: plans } = await supabase
     .from('plans')
     .select('*')
-    .eq('id', id)
-    .single();
+    .eq('id', id) as { data: Plan[] | null };
+
+  const plan = (plans ?? [])[0];
 
   if (!plan) {
     notFound();

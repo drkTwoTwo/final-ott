@@ -50,7 +50,16 @@ export default function CheckoutSuccessPage() {
       await verifyPayment(orderId!, session?.access_token);
 
       // Load order details
-      const { data: orderData, error } = await supabase
+      type OrderWithPlan = {
+        id: string;
+        status: 'pending' | 'completed' | 'failed';
+        amount: number;
+        currency: string;
+        created_at: string;
+        plans: { name: string; products: { name: string } };
+      };
+
+      const { data: orderRows, error } = await supabase
         .from('orders')
         .select(
           `
@@ -67,14 +76,15 @@ export default function CheckoutSuccessPage() {
           )
         `
         )
-        .eq('id', orderId)
-        .single();
+        .eq('id', orderId) as { data: OrderWithPlan[] | null; error: unknown };
+
+      const orderData = (orderRows ?? [])[0];
 
       if (error || !orderData) {
         throw new Error('Order not found');
       }
 
-      setOrder(orderData as any);
+      setOrder(orderData);
     } catch (error: any) {
       console.error('Error verifying payment:', error);
     } finally {

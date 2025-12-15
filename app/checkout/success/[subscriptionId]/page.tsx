@@ -3,6 +3,22 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 
+type SubscriptionWithPlan = {
+  id: string;
+  status: string;
+  current_period_start: string;
+  current_period_end: string;
+  guest_email: string | null;
+  plans: {
+    id: string;
+    name: string;
+    price: number;
+    currency: string;
+    interval: 'month' | 'year';
+    products: { id: string; name: string };
+  };
+};
+
 export default async function CheckoutSuccessPage({
   params,
 }: {
@@ -12,7 +28,7 @@ export default async function CheckoutSuccessPage({
 
   const supabase = await createClient();
   
-  const { data: subscription } = await supabase
+  const { data: subscriptions } = await supabase
     .from('subscriptions')
     .select(
       `
@@ -34,14 +50,15 @@ export default async function CheckoutSuccessPage({
       )
     `
     )
-    .eq('id', subscriptionId)
-    .single();
+    .eq('id', subscriptionId) as { data: SubscriptionWithPlan[] | null };
+
+  const subscription = (subscriptions ?? [])[0];
 
   if (!subscription) {
     notFound();
   }
 
-  const plan = subscription.plans as any;
+  const plan = subscription.plans;
   const product = plan.products;
 
   return (

@@ -64,7 +64,36 @@ export default function CheckoutPage() {
       const supabase = createClient();
       
       // Get plan details
-      const { data: planData, error: planError } = await supabase
+      type PlanWithProduct = {
+        id: string;
+        name: string;
+        description: string | null;
+        price: number;
+        currency: string;
+        interval: 'month' | 'year';
+        active: boolean;
+        product_id: string;
+        products: {
+          id: string;
+          name: string;
+          description: string | null;
+          image_url: string | null;
+          slug: string | null;
+          category: string | null;
+        };
+      };
+
+      type PlanSummary = {
+        id: string;
+        name: string;
+        description: string | null;
+        price: number;
+        currency: string;
+        interval: 'month' | 'year';
+        active: boolean;
+      };
+
+      const { data: planRows, error: planError } = await supabase
         .from('plans')
         .select(`
           id,
@@ -85,8 +114,9 @@ export default function CheckoutPage() {
           )
         `)
         .eq('id', planId)
-        .eq('active', true)
-        .single();
+        .eq('active', true) as { data: PlanWithProduct[] | null; error: unknown };
+
+      const planData = (planRows ?? [])[0];
 
       if (planError || !planData) {
         throw new Error('Plan not found');
@@ -101,11 +131,11 @@ export default function CheckoutPage() {
         .select('id, name, description, price, currency, interval, active')
         .eq('product_id', productData.id)
         .eq('active', true)
-        .order('price', { ascending: true });
+        .order('price', { ascending: true }) as { data: PlanSummary[] | null };
 
       setProduct({
         ...productData,
-        plans: allPlans || [],
+        plans: allPlans ?? [],
       });
 
       // Set selected plan (the one user clicked)

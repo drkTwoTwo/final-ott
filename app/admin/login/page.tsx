@@ -28,18 +28,19 @@ export default function AdminLoginPage() {
 
       if (!user) return;
 
-      const { data: profile, error } = await supabase
+      const { data: profileRows, error } = await supabase
         .from('profiles')
         .select('id, role')
-        .eq('id', user.id)
-        .single<Profile>();
+        .eq('id', user.id) as { data: Profile[] | null; error: unknown };
 
       if (error) {
         console.error('Profile fetch error:', error);
         return;
       }
 
-      if (profile && profile.role === 'admin') {
+      const profile = (profileRows ?? [])[0];
+
+      if (profile?.role === 'admin') {
         router.push(searchParams.get('redirect') || '/admin');
       }
     };
@@ -66,11 +67,12 @@ export default function AdminLoginPage() {
       const user = data.user;
       if (!user) throw new Error('Authentication failed');
 
-      const { data: profile, error: profileError } = await supabase
+      const { data: profileRows, error: profileError } = await supabase
         .from('profiles')
         .select('id, role')
-        .eq('id', user.id)
-        .single<Profile>();
+        .eq('id', user.id) as { data: Profile[] | null; error: unknown };
+
+      const profile = (profileRows ?? [])[0];
 
       if (profileError || !profile) {
         throw new Error('Failed to fetch user profile');

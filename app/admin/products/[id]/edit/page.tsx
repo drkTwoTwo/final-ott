@@ -3,6 +3,17 @@ import { isAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import ProductFormWithUpload from '@/components/admin/ProductFormWithUpload';
 
+type Product = {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  slug: string | null;
+  image_url: string | null;
+  active: boolean;
+  stock_quantity: number | null;
+};
+
 export default async function EditProductPage({
   params,
 }: {
@@ -18,11 +29,12 @@ export default async function EditProductPage({
 
   const supabase = await createClient();
   
-  const { data: product } = await supabase
+  const { data: products } = await supabase
     .from('products')
     .select('*')
-    .eq('id', id)
-    .single();
+    .eq('id', id) as { data: Product[] | null };
+
+  const product = (products ?? [])[0];
 
   if (!product) {
     notFound();
@@ -34,7 +46,7 @@ export default async function EditProductPage({
         <h1 className="text-3xl font-bold tracking-tight text-white">
           Edit Product
         </h1>
-        <ProductFormWithUpload product={product as any} />
+        <ProductFormWithUpload product={product} />
       </div>
     </div>
   );
