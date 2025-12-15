@@ -4,7 +4,9 @@
 import { corsResponse, jsonResponse, errorResponse } from '../_shared/cors.ts';
 import { createAnonClient } from '../_shared/supabase.ts';
 
-Deno.serve(async (req) => {
+declare const Deno: any;
+
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return corsResponse();
@@ -28,6 +30,7 @@ Deno.serve(async (req) => {
         slug,
         category,
         active,
+        stock_quantity,
         created_at
       `)
       .eq('active', true)
@@ -43,7 +46,7 @@ Deno.serve(async (req) => {
     }
 
     // Get plans for each product
-    const productIds = products.map((p) => p.id);
+    const productIds = products.map((p: any) => p.id);
     const { data: plans, error: plansError } = await supabase
       .from('plans')
       .select(`
@@ -66,9 +69,9 @@ Deno.serve(async (req) => {
     }
 
     // Group plans by product
-    const productsWithPlans = products.map((product) => ({
+    const productsWithPlans = products.map((product: any) => ({
       ...product,
-      plans: plans?.filter((plan) => plan.product_id === product.id) || [],
+      plans: plans?.filter((plan: any) => plan.product_id === product.id) || [],
     }));
 
     return jsonResponse({

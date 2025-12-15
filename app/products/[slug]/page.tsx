@@ -90,7 +90,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const isInStock = product.stock_quantity === null || product.stock_quantity > 0;
+  const isInStock = product.stock_quantity == null || product.stock_quantity > 0;
 
   return (
     <div className="min-h-screen bg-black">

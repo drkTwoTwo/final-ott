@@ -5,7 +5,9 @@ import { corsResponse, jsonResponse, errorResponse } from '../_shared/cors.ts';
 import { createAnonClient } from '../_shared/supabase.ts';
 import { validateString } from '../_shared/validation.ts';
 
-Deno.serve(async (req) => {
+declare const Deno: any;
+
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return corsResponse();
@@ -41,7 +43,7 @@ Deno.serve(async (req) => {
     // Get product by slug
     const { data: product, error: productError } = await supabase
       .from('products')
-      .select('id, name, description, image_url, slug, category, active, created_at')
+      .select('id, name, description, image_url, slug, category, active, stock_quantity, created_at')
       .eq('slug', slug)
       .eq('active', true)
       .single();
